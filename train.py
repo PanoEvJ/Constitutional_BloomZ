@@ -73,9 +73,11 @@ class ScriptArguments:
         default=1, metadata={"help": "the number of gradient accumulation steps"}
     )
     model_save_path: Optional[str] = field(
-        default="./gpt-j-6B-detoxified-long-context-26-shl-1e4-final",
+        default="./gpt2-detoxified-RLAIF",
         metadata={"help": "the path to save the model"},
     )
+    num_epochs: Optional[str] = field(default=250, metadata={"help": "the model name"})
+    HF_repo: Optional[str] = field(default="", metadata={"help": "the HF repo"})
 
 
 parser = HfArgumentParser(ScriptArguments)
@@ -116,8 +118,8 @@ def build_dataset(
     ds = load_dataset(dataset_name, split="train")
 
     def filter_fn(sample):
-        toxicity = sample["prompt"]["toxicity"]
-        return toxicity is not None and toxicity > 0.3
+        toxicity = sample["prompt"]["severe_toxicity"]
+        return toxicity is not None and toxicity > 0.6
 
     ds = ds.filter(filter_fn, batched=False)
 
@@ -144,6 +146,7 @@ min_input_length = 30
 max_input_length = 40
 dataset = build_dataset(config, input_min_text_length=min_input_length, input_max_text_length=max_input_length)
 
+print(dataset)
 
 def collator(data):
     return dict((key, [d[key] for d in data]) for key in data[0])
@@ -206,8 +209,10 @@ output_length_sampler = LengthSampler(output_min_length, output_max_length)
 
 model_save_path = script_args.model_save_path
 
+i = 0
 for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     query_tensors = batch["input_ids"]
+    i += 1
 
     # Get response from the policy model
     response_tensors = []
@@ -236,3 +241,9 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     if epoch % 100 == 0:
         if ppo_trainer.accelerator.is_main_process:
             ppo_trainer.save_pretrained(model_save_path)
+
+    if epoch == 250: break
+
+if script_args.HF_repo !='':
+    # model.push_to_hub(f"PanoEvJ/{script_args.HF_repo}", use_auth_token=True)
+    model.push_to_hub(script_args.HF_repo, use_auth_token=True)

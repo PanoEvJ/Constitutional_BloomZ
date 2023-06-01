@@ -47,6 +47,7 @@ elif args.model_type == "PanoEvJ/gpt2-detoxified-RLAIF":
     print('AAAAAAAAAAAAAAAAAA')
     MODELS_TO_TEST = [
         "PanoEvJ/gpt2-detoxified-RLAIF",
+        "PanoEvJ/gpt2-severe-detox-RLAIF",
         "gpt2",
     ]
 else:
@@ -73,7 +74,8 @@ writer.writerow(["model_id", "mean_toxicity", "std_toxicity"])
 
 for model_id in tqdm(MODELS_TO_TEST):
     model = AutoModelForCausalLM.from_pretrained(model_id, device_map={"": device}, torch_dtype=torch.bfloat16)
-    if model_id == 'PanoEvJ/gpt2-detoxified-RLAIF':
+    if model_id == 'PanoEvJ/gpt2-detoxified-RLAIF' or \
+       model_id == 'PanoEvJ/gpt2-severe-detox-RLAIF':
         model_tokenizer = 'gpt2'
     else:
         model_tokenizer = model_id
