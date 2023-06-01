@@ -254,5 +254,5 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
         break
 
 if script_args.HF_repo !='':
-    # model.push_to_hub(f"PanoEvJ/{script_args.HF_repo}", use_auth_token=True)
     model.push_to_hub(script_args.HF_repo, use_auth_token=True)
+    tokenizer.push_to_hub(script_args.HF_repo, use_auth_token=True)
