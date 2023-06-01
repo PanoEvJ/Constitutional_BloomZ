@@ -27,6 +27,9 @@ from transformers import (
     RobertaTokenizer,
 )
 
+import numpy
+import pandas as pd
+
 from trl import AutoModelForCausalLMWithValueHead, PPOConfig, PPOTrainer, create_reference_model, set_seed
 from trl.core import LengthSampler
 
@@ -209,10 +212,11 @@ output_length_sampler = LengthSampler(output_min_length, output_max_length)
 
 model_save_path = script_args.model_save_path
 
-i = 0
+sum_rewards = []
+rewards_dict = {}
+
 for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     query_tensors = batch["input_ids"]
-    i += 1
 
     # Get response from the policy model
     response_tensors = []
@@ -232,6 +236,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     toxicity_labels = (logits[:, 0]).tolist()
 
     rewards = [torch.tensor(output) for output in toxicity_labels]
+    sum_rewards.append(numpy.mean(toxicity_labels))
 
     # Run PPO step
     stats = ppo_trainer.step(query_tensors, response_tensors, rewards)
@@ -242,7 +247,11 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
         if ppo_trainer.accelerator.is_main_process:
             ppo_trainer.save_pretrained(model_save_path)
 
-    if epoch == 250: break
+    if epoch == 250: 
+        rewards_dict = {'epoch': list(range(1,epoch+2)), 'reward': sum_rewards}
+        df = pd.DataFrame(rewards_dict) 
+        df.to_csv('rewards.csv')
+        break
 
 if script_args.HF_repo !='':
     # model.push_to_hub(f"PanoEvJ/{script_args.HF_repo}", use_auth_token=True)
