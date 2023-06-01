@@ -43,15 +43,14 @@ elif args.model_type == "gpt-j":
         "ybelkada/gpt-j-6b-sharded-bf16",
         "ybelkada/gpt-j-6b-detox",
     ]
-elif args.model_type == "PanoEvJ/gpt2-detoxified-RLAIF":
-    print('AAAAAAAAAAAAAAAAAA')
+elif args.model_type == 'RLAIF':
     MODELS_TO_TEST = [
+        # "PanoEvJ/gpt2-detoxified-RLAIF-with-rewards",
         "PanoEvJ/gpt2-detoxified-RLAIF",
         "PanoEvJ/gpt2-severe-detox-RLAIF",
         "gpt2",
     ]
 else:
-    print('BBBBBBBBBBBBBBBBBBBB')
     MODELS_TO_TEST = [args.model_type]
 NUM_SAMPLES = args.num_samples
 BATCH_SIZE = args.batch_size
@@ -75,7 +74,8 @@ writer.writerow(["model_id", "mean_toxicity", "std_toxicity"])
 for model_id in tqdm(MODELS_TO_TEST):
     model = AutoModelForCausalLM.from_pretrained(model_id, device_map={"": device}, torch_dtype=torch.bfloat16)
     if model_id == 'PanoEvJ/gpt2-detoxified-RLAIF' or \
-       model_id == 'PanoEvJ/gpt2-severe-detox-RLAIF':
+       model_id == 'PanoEvJ/gpt2-severe-detox-RLAIF' or \
+       model_id == 'PanoEvJ/gpt2-severe-detox-RLAIF-with-rewards':
         model_tokenizer = 'gpt2'
     else:
         model_tokenizer = model_id
