@@ -159,7 +159,7 @@ model = AutoModelForCausalLM.from_pretrained(config.model_name, torch_dtype=torc
 model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
 
 # We create a reference model by sharing 20 layers
-ref_model = create_reference_model(model, num_shared_layers=10)
+ref_model = create_reference_model(model, num_shared_layers=6)
 
 # We make sure to use `Adam` optimizer on the model parameters that require gradients.
 optimizer = Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config.learning_rate)
@@ -179,8 +179,6 @@ ppo_trainer = PPOTrainer(
     data_collator=collator,
     optimizer=optimizer,
 )
-
-#model.pretrained_model.enable_gradient_checkpointing()
 
 # We then build the reward pipeline, we will use the toxicity model to compute the reward.
 # We first load the toxicity model and tokenizer.
